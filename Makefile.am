@@ -2059,6 +2059,7 @@ tests += \
 	test-bus-kernel \
 	test-bus-kernel-bloom \
 	test-bus-kernel-benchmark \
+	test-bus-kernel-monitor \
 	test-bus-memfd \
 	test-bus-zero-copy \
 	test-bus-introspect \
@@ -2202,6 +2203,17 @@ test_bus_kernel_benchmark_LDADD = \
 	libsystemd-id128-internal.la \
 	libsystemd-daemon-internal.la \
 	libsystemd-shared.la
+
+test_bus_kernel_monitor_SOURCES = \
+	src/libsystemd-bus/test-bus-kernel-monitor.c
+
+test_bus_kernel_monitor_LDADD = \
+	libsystemd-bus-internal.la \
+	libsystemd-id128-internal.la \
+	libsystemd-daemon-internal.la \
+	libsystemd-shared.la \
+	libsystemd-bus-dump.la \
+	libsystemd-capability.la
 
 test_bus_memfd_SOURCES = \
 	src/libsystemd-bus/test-bus-memfd.c
