@@ -17,16 +17,109 @@
   along with systemd; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <getopt.h>
 
+#include "config.h"
+#include "log.h"
 #include "sd-id128.h"
 #include "sd-messages.h"
 #include "sd-event.h"
 #include "sd-bus.h"
 
+#define BUS_PATH "org.freedesktop.DBus"
+
+static bool arg_system = true;
+
+static int help(void) {
+
+        printf("%s [OPTIONS...]\n\n"
+               "Provide compatibility org.freedesktop.DBus service.\n\n"
+               "  -h --help               Show this help\n"
+               "     --version            Show package version\n"
+               "     --system             Connect to system bus\n"
+               "     --user               Connect to user bus\n",
+               program_invocation_short_name);
+
+        return 0;
+}
+
+
+static int parse_argv(int argc, char *argv[]) {
+        enum {
+                ARG_VERSION,
+                ARG_SYSTEM,
+                ARG_USER,
+        };
+        static const struct option options[] = {
+                { "system",      no_argument,     NULL,   ARG_SYSTEM  },
+                { "user",        no_argument,     NULL,   ARG_USER    },
+                { "version",     no_argument,     NULL,   ARG_VERSION },
+                { "help",        no_argument,     NULL,   'h'         },
+                { NULL,          0,               NULL,   0           }
+        };
+        int c;
+
+        while ((c = getopt_long(argc, argv, "h", options, NULL)) >= 0) {
+                switch (c) {
+
+                case ARG_SYSTEM:
+                        arg_system = true;
+                        break;
+
+                case ARG_USER:
+                        arg_system = false;
+                        break;
+
+                case ARG_VERSION:
+                        puts(PACKAGE_STRING);
+                        return 0;
+
+                case 'h':
+                        return help();
+
+                default:
+                        return -EINVAL;
+                }
+        }
+
+        return 1;
+}
+
+static int bus_get(sd_bus **_bus) {
+        sd_bus *bus;
+        int r;
+
+        r = arg_system ? sd_bus_default_system(&bus) : sd_bus_default_user(&bus);
+        if (r < 0) {
+                log_error("Failed to get %s bus: %s", arg_system ? "system" : "user",
+                          strerror(-r));
+                return -r;
+        }
+
+        *_bus = bus;
+
+        return 1;
+}
+
 int main(int argc, char *argv[]) {
+        int r;
+        sd_bus *bus;
+
+        log_set_target(LOG_TARGET_CONSOLE);
+        log_parse_environment();
+        log_open();
+
+        r = parse_argv(argc, argv);
+        if (r <= 0)
+                return EXIT_FAILURE;
+
+        r = bus_get(&bus);
+        if (r <= 0)
+                return EXIT_FAILURE;
 
         return EXIT_SUCCESS;
 
