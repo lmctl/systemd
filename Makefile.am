@@ -331,6 +331,7 @@ rootlibexec_PROGRAMS = \
 	systemd-sysctl \
 	systemd-sleep \
 	systemd-bus-proxyd \
+	systemd-bus-freedesktopd \
 	systemd-socket-proxyd
 
 systemgenerator_PROGRAMS = \
@@ -1901,6 +1902,18 @@ bus-proxyd-uninstall-hook:
 
 INSTALL_EXEC_HOOKS += bus-proxyd-install-hook
 UNINSTALL_EXEC_HOOKS += bus-proxyd-uninstall-hook
+# ------------------------------------------------------------------------------
+systemd_bus_freedesktopd_SOURCES = \
+	src/bus-freedesktopd/bus-freedesktopd.c
+
+systemd_bus_freedesktopd_LDADD = \
+	libsystemd-bus-internal.la \
+	libsystemd-daemon-internal.la \
+	libsystemd-id128-internal.la \
+	libsystemd-shared.la
+
+EXTRA_DIST += \
+	units/systemd-timedated.service.in
 # ------------------------------------------------------------------------------
 systemd_tty_ask_password_agent_SOURCES = \
 	src/tty-ask-password-agent/tty-ask-password-agent.c
