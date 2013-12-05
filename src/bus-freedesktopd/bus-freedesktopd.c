@@ -30,9 +30,38 @@
 #include "sd-event.h"
 #include "sd-bus.h"
 
-#define BUS_PATH "org.freedesktop.DBus"
+
+#define DBUS_BUS_PATH    "org.freedesktop.DBus"
+#define DBUS_IFACE       "org.freedesktop.DBus"
+#define DBUS_OBJ_PATH    "/org/freedesktop/DBus"
 
 static bool arg_system = true;
+
+
+static int dbus_hello(sd_bus *bus, sd_bus_message *m, void *userdata, sd_bus_error *error) {
+
+     assert(bus);
+     assert(m);
+
+     return sd_bus_reply_method_return(m, "s", "Test. Test. Test. This function shall not be used in kdbus");
+
+}
+
+static int dbus_list_names(sd_bus *bus, sd_bus_message *m, void *userdata, sd_bus_error *error) {
+
+     assert(bus);
+     assert(m);
+
+     return sd_bus_reply_method_return(m, "as", "test1", "test2");
+}
+
+static const sd_bus_vtable dbus_vtable[] = {
+        SD_BUS_VTABLE_START(0),
+        SD_BUS_METHOD("Hello", "s", NULL, dbus_hello, 0),
+        SD_BUS_METHOD("ListNames", "s", NULL, dbus_list_names, 0),
+        SD_BUS_VTABLE_END,
+};
+
 
 static int help(void) {
 
@@ -107,7 +136,7 @@ static int bus_get(sd_bus **_bus) {
 
 int main(int argc, char *argv[]) {
         int r;
-        sd_bus *bus;
+        sd_bus *bus = NULL;
 
         log_set_target(LOG_TARGET_CONSOLE);
         log_parse_environment();
@@ -120,6 +149,18 @@ int main(int argc, char *argv[]) {
         r = bus_get(&bus);
         if (r <= 0)
                 return EXIT_FAILURE;
+
+        r = sd_bus_add_object_vtable(bus, DBUS_OBJ_PATH, DBUS_IFACE, dbus_vtable, NULL);
+        if (r < 0) {
+                log_error("Failed to register object: %s", strerror(-r));
+                return EXIT_FAILURE;
+        }
+
+        r = sd_bus_request_name(bus, DBUS_BUS_PATH, SD_BUS_NAME_DO_NOT_QUEUE);
+        if (r < 0) {
+                log_error("Failed to register name: %s", strerror(-r));
+                return EXIT_FAILURE;
+        }
 
         return EXIT_SUCCESS;
 
