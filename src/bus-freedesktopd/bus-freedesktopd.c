@@ -137,6 +137,7 @@ static int bus_get(sd_bus **_bus) {
 int main(int argc, char *argv[]) {
         int r;
         sd_bus *bus = NULL;
+        sd_event *ev = NULL;
 
         log_set_target(LOG_TARGET_CONSOLE);
         log_parse_environment();
@@ -145,6 +146,12 @@ int main(int argc, char *argv[]) {
         r = parse_argv(argc, argv);
         if (r <= 0)
                 return EXIT_FAILURE;
+
+        r = sd_event_default(&ev);
+        if (r < 0) {
+                log_error("Failed to allocate event loop: %s", strerror(-r));
+                return EXIT_FAILURE;
+        }
 
         r = bus_get(&bus);
         if (r <= 0)
@@ -159,6 +166,12 @@ int main(int argc, char *argv[]) {
         r = sd_bus_request_name(bus, DBUS_BUS_PATH, SD_BUS_NAME_DO_NOT_QUEUE);
         if (r < 0) {
                 log_error("Failed to register name: %s", strerror(-r));
+                return EXIT_FAILURE;
+        }
+
+        r = sd_event_loop(ev);
+        if (r < 0) {
+                log_error("Failed to run event loop: %s", strerror(-r));
                 return EXIT_FAILURE;
         }
 
